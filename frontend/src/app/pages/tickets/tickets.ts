@@ -12,13 +12,31 @@ import { filterTickets, TicketFilter } from '../../features/tickets/filter-ticke
 export class Tickets {
   readonly tickets = signal(DEMO_TICKETS);
   readonly filter = signal<TicketFilter>('all');
-  // Соединение состояния с чистой функцией уже подготовлено.
-  readonly visibleTickets = computed(() => filterTickets(this.tickets(), this.filter()));
+  readonly searchQuery = signal('');
+
+  readonly visibleTickets = computed(() => {
+    const byStatus = filterTickets(this.tickets(), this.filter());
+    const query = this.searchQuery().trim().toLowerCase();
+
+    if (!query) {
+      return byStatus;
+    }
+
+    return byStatus.filter((ticket) =>
+      ticket.title.toLowerCase().includes(query)
+    );
+  });
+
   readonly statusLabels: Record<TicketStatus, string> = {
     new: 'Новая', in_progress: 'В работе', closed: 'Закрыта',
   };
 
   setFilter(mode: TicketFilter): void {
-    // TODO(LR1-04): сохраните выбранный режим в сигнале filter.
+    this.filter.set(mode);
+  }
+
+  onSearch(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.searchQuery.set(input.value);
   }
 }
